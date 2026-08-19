@@ -1089,6 +1089,15 @@
       flex: 1.6;
     }
 
+    .editor-foot button.primary.has-changes {
+      animation: saveGlow 1.4s ease-in-out infinite;
+    }
+
+    @keyframes saveGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0, 113, 227, 0); }
+      50% { box-shadow: 0 0 0 6px rgba(0, 113, 227, 0.22); }
+    }
+
     .editor-foot button.primary:hover {
       background: var(--accent-hover);
     }
@@ -1301,6 +1310,12 @@
           </label>
         </div>
         <div class="block">
+          <h4>平台（公众号 / 人人都是产品经理）</h4>
+          <div id="platformEditList"></div>
+          <p class="hint">公众号：上传二维码图片；人人都是产品经理：填主页链接即可。</p>
+          <button class="mini" id="addPlatform">＋ 添加平台</button>
+        </div>
+        <div class="block">
           <h4>关于我</h4>
           <textarea id="f-about"></textarea>
           <p class="hint">每行一段</p>
@@ -1314,12 +1329,6 @@
           <h4>项目</h4>
           <div id="projectList"></div>
           <button class="mini" id="addProject">＋ 添加项目</button>
-        </div>
-        <div class="block">
-          <h4>平台（公众号 / 人人都是产品经理）</h4>
-          <div id="platformList"></div>
-          <p class="hint">公众号：上传二维码图片（自动保存到浏览器）；人人都是产品经理：填主页链接即可。</p>
-          <button class="mini" id="addPlatform">＋ 添加平台</button>
         </div>
       </div>
       <div class="editor-foot">
@@ -1598,10 +1607,20 @@
       /* ================= 编辑面板 ================= */
       var editor = qs('#editor');
 
-      function openEditor() {
+      function openEditor(scrollTo) {
         fillForm();
         editor.classList.add('open');
         document.body.style.overflow = 'hidden';
+        if (typeof scrollTo === 'string') {
+          var target = qs(scrollTo);
+          if (target) {
+            setTimeout(function () {
+              var body = qs('.editor-body');
+              var block = target.closest('.block');
+              if (block) body.scrollTop = block.offsetTop - 16;
+            }, 80);
+          }
+        }
       }
 
       function closeEditor() {
@@ -1687,7 +1706,7 @@
         pl.innerHTML = '';
         (siteData.projects || []).forEach(function (p) { pl.appendChild(projectRow(p)); });
 
-        var pfl = qs('#platformList');
+        var pfl = qs('#platformEditList');
         pfl.innerHTML = '';
         (siteData.platforms || []).forEach(function (p) { pfl.appendChild(platformRow(p)); });
       }
@@ -1719,7 +1738,7 @@
             tags: qs('.f-tags', row).value.split(/[,，]/).map(trim).filter(Boolean)
           });
         });
-        qsa('#platformList .field-row').forEach(function (row) {
+        qsa('#platformEditList .field-row').forEach(function (row) {
           d.platforms.push({
             name: trim(qs('.f-name', row).value) || '未命名平台',
             desc: trim(qs('.f-desc', row).value),
@@ -1761,7 +1780,7 @@
       });
 
       /* ----- 事件绑定 ----- */
-      qs('#editBtn').addEventListener('click', openEditor);
+      qs('#editBtn').addEventListener('click', function () { openEditor(); });
       qs('#closeEditor').addEventListener('click', closeEditor);
       editor.addEventListener('click', function (e) {
         if (e.target === editor) closeEditor();
@@ -1777,14 +1796,23 @@
         qs('#projectList').appendChild(projectRow({ icon: '📦', title: '新项目', desc: '', tags: [] }));
       });
       qs('#addPlatform').addEventListener('click', function () {
-        qs('#platformList').appendChild(platformRow({ name: '新平台', desc: '', url: '', qr: '' }));
+        qs('#platformEditList').appendChild(platformRow({ name: '新平台', desc: '', url: '', qr: '' }));
       });
 
-      // 页面上的「去填写」占位 → 打开编辑面板
+      // 页面上的「去填写」占位 → 打开编辑面板并定位到平台编辑区
       document.addEventListener('click', function (e) {
         if (e.target.closest('.platform__qr--empty')) {
-          openEditor();
+          openEditor('#platformEditList');
         }
+      });
+
+      // 有未保存修改时，保存按钮发光提醒
+      var saveBtnEl = qs('#saveBtn');
+      qs('.editor-body').addEventListener('input', function () {
+        saveBtnEl.classList.add('has-changes');
+      });
+      saveBtnEl.addEventListener('click', function () {
+        saveBtnEl.classList.remove('has-changes');
       });
 
       qs('#saveBtn').addEventListener('click', function () {
