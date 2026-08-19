@@ -22,6 +22,8 @@
       --radius-tile: 18px;
       --radius-pill: 980px;
       --gradient-blue: linear-gradient(135deg, #2997ff 0%, #0071e3 45%, #5856d6 100%);
+      --grad: linear-gradient(100deg, #2997ff, #0071e3, #5856d6);
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
       /* 派生变量（随主题切换） */
       --nav-bg: rgba(245, 245, 247, 0.72);
@@ -41,6 +43,10 @@
       --thumb-2: linear-gradient(135deg, #bf5af2, #5856d6);
       --thumb-3: linear-gradient(135deg, #30d158, #0aa33c);
       --overlay-bg: rgba(0, 0, 0, 0.4);
+      --blob-1: rgba(0, 113, 227, 0.26);
+      --blob-2: rgba(88, 86, 214, 0.20);
+      --alt-glow-1: rgba(0, 113, 227, 0.08);
+      --alt-glow-2: rgba(88, 86, 214, 0.10);
     }
 
     /* 暗色模式（Apple 官方深色：纯黑底 + 深灰卡片） */
@@ -58,6 +64,7 @@
         --accent-hover: #0a84ff;
         --border: #424245;
         --gradient-blue: linear-gradient(135deg, #64d2ff 0%, #2997ff 45%, #bf5af2 100%);
+        --grad: linear-gradient(100deg, #64d2ff, #2997ff, #bf5af2);
 
         --nav-bg: rgba(0, 0, 0, 0.72);
         --sel-bg: rgba(41, 151, 255, 0.25);
@@ -76,6 +83,10 @@
         --thumb-2: linear-gradient(135deg, #af52de, #5e5ce6);
         --thumb-3: linear-gradient(135deg, #30d158, #1d8a3a);
         --overlay-bg: rgba(0, 0, 0, 0.6);
+        --blob-1: rgba(41, 151, 255, 0.20);
+        --blob-2: rgba(175, 82, 222, 0.16);
+        --alt-glow-1: rgba(41, 151, 255, 0.06);
+        --alt-glow-2: rgba(175, 82, 222, 0.07);
       }
     }
 
@@ -113,15 +124,38 @@
       padding: 0 22px;
     }
 
+    /* ============ 顶部滚动进度条 ============ */
+    .scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 110;
+      height: 3px;
+      width: 0;
+      background: var(--grad);
+      border-radius: 0 3px 3px 0;
+      transition: width 0.1s linear;
+      pointer-events: none;
+    }
+
     /* ============ 导航栏（Apple 风格：细、12px、毛玻璃） ============ */
     nav {
-      position: sticky;
+      position: fixed;
       top: 0;
+      left: 0;
+      right: 0;
       z-index: 100;
+      background: transparent;
+      border-bottom: 1px solid transparent;
+      transition: background 0.3s, border-color 0.3s, backdrop-filter 0.3s, box-shadow 0.3s;
+    }
+
+    nav.is-scrolled {
       background: var(--nav-bg);
       backdrop-filter: saturate(180%) blur(20px);
       -webkit-backdrop-filter: saturate(180%) blur(20px);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      border-bottom-color: rgba(0, 0, 0, 0.08);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
     }
 
     nav .container {
@@ -155,7 +189,8 @@
       gap: 30px;
     }
 
-    nav a {
+    nav ul a {
+      position: relative;
       color: var(--nav-text);
       text-decoration: none;
       font-size: 12px;
@@ -164,11 +199,28 @@
       transition: opacity 0.2s;
     }
 
-    nav a:hover {
+    nav ul a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -6px;
+      width: 0;
+      height: 2px;
+      border-radius: 2px;
+      background: var(--accent);
+      transition: width 0.25s var(--ease);
+    }
+
+    nav ul a:hover {
       opacity: 1;
     }
 
-    nav a.active {
+    nav ul a:hover::after,
+    nav ul a.active::after {
+      width: 100%;
+    }
+
+    nav ul a.active {
       opacity: 1;
       color: var(--link);
     }
@@ -191,10 +243,76 @@
       background: var(--card);
     }
 
-    /* ============ Hero ============ */
+    /* ============ Hero（含漂浮光斑背景） ============ */
     .hero {
-      padding: 100px 0 64px;
+      position: relative;
+      overflow: hidden;
+      padding: 140px 0 72px;
       text-align: center;
+    }
+
+    .hero__blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(64px);
+      pointer-events: none;
+      z-index: 0;
+      will-change: transform;
+    }
+
+    .hero__blob--1 {
+      width: 480px;
+      height: 480px;
+      background: var(--blob-1);
+      top: -150px;
+      right: -110px;
+      animation: drift1 14s ease-in-out infinite;
+    }
+
+    .hero__blob--2 {
+      width: 400px;
+      height: 400px;
+      background: var(--blob-2);
+      top: 60px;
+      left: -130px;
+      animation: drift2 18s ease-in-out infinite;
+    }
+
+    @keyframes drift1 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-46px, 32px) scale(1.14); }
+    }
+
+    @keyframes drift2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(44px, -24px) scale(1.1); }
+    }
+
+    .hero .container {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Hero 入场：上升浮现 */
+    .hero .app-icon,
+    .hero .badge,
+    .hero h1,
+    .hero .subtitle,
+    .hero .bio,
+    .hero .links {
+      animation: rise 0.8s var(--ease) both;
+    }
+
+    .hero .app-icon { animation-delay: 0s; }
+    .hero .badge { animation-delay: 0.06s; }
+    .hero h1 { animation-delay: 0.12s; }
+    .hero .subtitle { animation-delay: 0.2s; }
+    .hero .bio { animation-delay: 0.3s; }
+    .hero .links { animation-delay: 0.4s; }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(26px); }
+      to { opacity: 1; transform: none; }
     }
 
     .badge {
@@ -244,11 +362,17 @@
     }
 
     .hero h1 .grad {
-      background: var(--gradient-blue);
+      background: var(--grad);
+      background-size: 200% 100%;
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
       color: transparent;
+      animation: shimmer 5s linear infinite;
+    }
+
+    @keyframes shimmer {
+      to { background-position: 200% 0; }
     }
 
     .hero .subtitle {
@@ -320,6 +444,23 @@
       scroll-margin-top: 60px;
     }
 
+    .section--alt {
+      background:
+        radial-gradient(42rem 20rem at 88% -10%, var(--alt-glow-1), transparent 60%),
+        radial-gradient(36rem 20rem at 0% 40%, var(--alt-glow-2), transparent 60%),
+        var(--bg);
+    }
+
+    .section-kicker {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      text-align: center;
+      color: var(--link);
+      margin-bottom: 10px;
+    }
+
     .section-title {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue",
         "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -338,10 +479,24 @@
       padding: clamp(28px, 5vw, 48px);
       color: var(--text-2);
       box-shadow: var(--shadow-card);
+      transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+    }
+
+    .about-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
     }
 
     .about-card p {
       max-width: 680px;
+    }
+
+    .about-card p:first-child {
+      font-size: clamp(19px, 2.4vw, 24px);
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.5;
+      letter-spacing: -0.01em;
     }
 
     .about-card p + p {
@@ -361,11 +516,12 @@
       padding: 28px 24px;
       text-align: left;
       box-shadow: var(--shadow-card);
-      transition: transform 0.2s ease;
+      transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
     }
 
     .skill:hover {
-      transform: translateY(-3px);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-hover);
     }
 
     .skill .tile {
@@ -415,7 +571,7 @@
       border-radius: var(--radius-card);
       padding: 30px 28px;
       box-shadow: var(--shadow-card);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
     }
 
     .project:hover {
@@ -473,8 +629,147 @@
 
     .project .tag.blue { background: var(--tag-blue-bg); color: var(--tag-blue-text); }
 
+    /* ============ 平台（公众号 / 人人都是产品经理） ============ */
+    .platforms {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .platform {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: var(--card);
+      border: 1px solid transparent;
+      border-radius: var(--radius-card);
+      padding: 30px 28px;
+      box-shadow: var(--shadow-card);
+      transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), border-color 0.3s;
+    }
+
+    .platform:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-hover);
+      border-color: rgba(0, 113, 227, 0.3);
+    }
+
+    .platform__top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .platform__icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--gradient-blue);
+      color: #fff;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-icon);
+      transition: transform 0.3s var(--ease);
+    }
+
+    .platform:hover .platform__icon {
+      transform: scale(1.08) rotate(-4deg);
+    }
+
+    .platform__icon svg {
+      width: 26px;
+      height: 26px;
+    }
+
+    .platform__name {
+      font-size: 21px;
+      font-weight: 600;
+      letter-spacing: -0.019em;
+    }
+
+    .platform__desc {
+      color: var(--text-2);
+      font-size: 14px;
+      line-height: 1.5;
+      letter-spacing: -0.016em;
+      flex: 1;
+    }
+
+    .platform__qr {
+      width: 160px;
+      height: 160px;
+      border-radius: 18px;
+      object-fit: cover;
+      align-self: center;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-card);
+    }
+
+    .platform__qr--empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 160px;
+      height: 160px;
+      align-self: center;
+      border-radius: 18px;
+      background: var(--bg);
+      border: 1.5px dashed var(--border);
+      color: var(--text-3);
+      font-size: 13px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .platform__qr--empty:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .platform__btn {
+      align-self: flex-start;
+      margin-top: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .platform__btn .arrow {
+      transition: transform 0.2s var(--ease);
+    }
+
+    .platform__btn:hover .arrow {
+      transform: translateX(4px);
+    }
+
     /* ============ 联系 ============ */
+    .contact-wrap {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .contact__blob {
+      position: absolute;
+      inset: -20%;
+      background: radial-gradient(42rem 30rem at 50% 120%, var(--blob-1), transparent 62%);
+      animation: contactPulse 6s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes contactPulse {
+      0%, 100% { opacity: 0.7; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.06); }
+    }
+
     .contact {
+      position: relative;
+      z-index: 1;
       text-align: center;
       padding-bottom: 100px;
     }
@@ -493,12 +788,16 @@
       text-decoration: none;
       font-size: 17px;
       line-height: 1.2;
-      transition: background 0.2s, box-shadow 0.2s;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
     }
 
     .contact .email-btn:hover {
       background: var(--accent-hover);
       box-shadow: var(--btn-shadow);
+    }
+
+    .contact .email-btn:active {
+      transform: scale(0.97);
     }
 
     /* ============ Footer ============ */
@@ -517,11 +816,29 @@
       color: var(--border);
     }
 
+    .footer-socials {
+      display: flex;
+      gap: 18px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .footer-socials a {
+      color: var(--text-3);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-socials a:hover {
+      color: var(--accent);
+    }
+
     /* ============ 滚动显现动画 ============ */
     .reveal {
       opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.7s ease, transform 0.7s ease;
+      transform: translateY(26px);
+      transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
     }
 
     .reveal.visible {
@@ -531,6 +848,11 @@
 
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
+      .hero__blob--1, .hero__blob--2, .contact__blob,
+      .hero .app-icon, .hero .badge, .hero h1, .hero .subtitle, .hero .bio, .hero .links,
+      .hero h1 .grad {
+        animation: none;
+      }
       .reveal {
         opacity: 1;
         transform: none;
@@ -704,6 +1026,23 @@
       color: #fff;
     }
 
+    .qr-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .qr-row .qr-preview {
+      width: 72px;
+      height: 72px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
     .mini {
       display: inline-block;
       padding: 8px 16px;
@@ -783,15 +1122,19 @@
 
     /* ============ 响应式 ============ */
     @media (max-width: 600px) {
-      .hero { padding: 64px 0 40px; }
-      nav ul { gap: 20px; }
+      .hero { padding: 108px 0 48px; }
+      nav ul { gap: 18px; }
       section { padding: 40px 0; }
       .nav-right { gap: 8px; }
+      .hero__blob--1 { width: 340px; height: 340px; }
+      .hero__blob--2 { width: 280px; height: 280px; }
     }
   </style>
 </head>
 <body>
-  <nav>
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+  <nav id="nav">
     <div class="container">
       <a class="logo" href="#top">WYL394</a>
       <div class="nav-right">
@@ -799,6 +1142,7 @@
           <li><a href="#about">关于</a></li>
           <li><a href="#skills">技能</a></li>
           <li><a href="#projects">项目</a></li>
+          <li><a href="#platforms">平台</a></li>
           <li><a href="#contact">联系</a></li>
         </ul>
         <button id="editBtn" class="edit-btn" title="编辑内容">✎ 编辑</button>
@@ -806,99 +1150,127 @@
     </div>
   </nav>
 
-  <header id="top" class="hero container">
-    <div class="app-icon">W</div>
-    <div class="badge"><span class="dot"></span>欢迎来到我的主页</div>
-    <h1>你好，我是<span class="grad"> WYL394</span></h1>
-    <p class="subtitle">开发者 · 创作者 · 学习者</p>
-    <p class="bio">
-      欢迎来到我的个人主页。这里记录了我的项目、技能和想法，期待与你交流与合作。
-    </p>
-    <div class="links">
-      <a class="btn btn-primary" href="#contact">联系我</a>
-      <a class="btn btn-link" href="#projects">查看项目 ›</a>
+  <header id="top" class="hero">
+    <div class="hero__blob hero__blob--1" aria-hidden="true"></div>
+    <div class="hero__blob hero__blob--2" aria-hidden="true"></div>
+    <div class="container">
+      <div class="app-icon">W</div>
+      <div class="badge"><span class="dot"></span>欢迎来到我的主页</div>
+      <h1>你好，我是<span class="grad"> WYL394</span></h1>
+      <p class="subtitle">开发者 · 创作者 · 学习者</p>
+      <p class="bio">
+        欢迎来到我的个人主页。这里记录了我的项目、技能和想法，期待与你交流与合作。
+      </p>
+      <div class="links">
+        <a class="btn btn-primary" href="#contact">联系我</a>
+        <a class="btn btn-link" href="#projects">查看项目 ›</a>
+      </div>
     </div>
   </header>
 
-  <section id="about" class="container">
-    <h2 class="section-title reveal">关于我</h2>
-    <div class="about-card reveal">
-      <p>
-        我是一名热爱技术与创造的人，专注于软件开发和学习新技术。
-        我喜欢把复杂的问题拆解成简单的部分，并用代码去解决它们。
-      </p>
-      <p>
-        工作之余，我也喜欢阅读、写作和探索新事物。
-        这个主页是我在网络上的一个小小角落，欢迎常来看看。
-      </p>
-    </div>
-  </section>
-
-  <section id="skills" class="container">
-    <h2 class="section-title reveal">技能</h2>
-    <div class="skills">
-      <div class="skill reveal">
-        <div class="tile tile-1">💻</div>
-        <div class="name">前端开发</div>
-        <div class="desc">React、Vue 与响应式界面设计，注重细节与体验。</div>
-      </div>
-      <div class="skill reveal">
-        <div class="tile tile-2">⚙️</div>
-        <div class="name">后端开发</div>
-        <div class="desc">API 设计与服务架构，构建稳定可靠的系统。</div>
-      </div>
-      <div class="skill reveal">
-        <div class="tile tile-3">📊</div>
-        <div class="name">数据分析</div>
-        <div class="desc">从数据中洞察规律，用可视化讲述故事。</div>
-      </div>
-      <div class="skill reveal">
-        <div class="tile tile-4">🎨</div>
-        <div class="name">UI 设计</div>
-        <div class="desc">追求简洁清晰的视觉表达，让界面自然好用。</div>
+  <section id="about">
+    <div class="container">
+      <p class="section-kicker reveal">About Me</p>
+      <h2 class="section-title reveal">关于我</h2>
+      <div class="about-card reveal">
+        <p>
+          我是一名热爱技术与创造的人，专注于软件开发和学习新技术。
+          我喜欢把复杂的问题拆解成简单的部分，并用代码去解决它们。
+        </p>
+        <p>
+          工作之余，我也喜欢阅读、写作和探索新事物。
+          这个主页是我在网络上的一个小小角落，欢迎常来看看。
+        </p>
       </div>
     </div>
   </section>
 
-  <section id="projects" class="container">
-    <h2 class="section-title reveal">项目</h2>
-    <div class="projects">
-      <div class="project reveal">
-        <div class="project-thumb t1">🖥️</div>
-        <h3>项目一</h3>
-        <p>这是一个关于项目一的简短描述，介绍它的功能、特点和亮点。</p>
-        <div class="tags">
-          <span class="tag blue">HTML</span><span class="tag">CSS</span><span class="tag">JS</span>
+  <section id="skills" class="section--alt">
+    <div class="container">
+      <p class="section-kicker reveal">Skills</p>
+      <h2 class="section-title reveal">技能</h2>
+      <div class="skills">
+        <div class="skill reveal">
+          <div class="tile tile-1">💻</div>
+          <div class="name">前端开发</div>
+          <div class="desc">React、Vue 与响应式界面设计，注重细节与体验。</div>
         </div>
-      </div>
-      <div class="project reveal">
-        <div class="project-thumb t2">🤖</div>
-        <h3>项目二</h3>
-        <p>这是一个关于项目二的简短描述，介绍它的功能、特点和亮点。</p>
-        <div class="tags">
-          <span class="tag blue">Python</span><span class="tag">AI</span>
+        <div class="skill reveal">
+          <div class="tile tile-2">⚙️</div>
+          <div class="name">后端开发</div>
+          <div class="desc">API 设计与服务架构，构建稳定可靠的系统。</div>
         </div>
-      </div>
-      <div class="project reveal">
-        <div class="project-thumb t3">🚀</div>
-        <h3>项目三</h3>
-        <p>这是一个关于项目三的简短描述，介绍它的功能、特点和亮点。</p>
-        <div class="tags">
-          <span class="tag blue">Node.js</span><span class="tag">API</span>
+        <div class="skill reveal">
+          <div class="tile tile-3">📊</div>
+          <div class="name">数据分析</div>
+          <div class="desc">从数据中洞察规律，用可视化讲述故事。</div>
+        </div>
+        <div class="skill reveal">
+          <div class="tile tile-4">🎨</div>
+          <div class="name">UI 设计</div>
+          <div class="desc">追求简洁清晰的视觉表达，让界面自然好用。</div>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="contact" class="container contact">
-    <h2 class="section-title reveal">联系我</h2>
-    <p class="reveal">如果你想和我交流或合作，欢迎通过以下方式联系我：</p>
-    <a class="email-btn reveal" href="mailto:your-email@example.com">your-email@example.com</a>
+  <section id="projects">
+    <div class="container">
+      <p class="section-kicker reveal">Featured Projects</p>
+      <h2 class="section-title reveal">项目</h2>
+      <div class="projects">
+        <div class="project reveal">
+          <div class="project-thumb t1">🖥️</div>
+          <h3>项目一</h3>
+          <p>这是一个关于项目一的简短描述，介绍它的功能、特点和亮点。</p>
+          <div class="tags">
+            <span class="tag blue">HTML</span><span class="tag">CSS</span><span class="tag">JS</span>
+          </div>
+        </div>
+        <div class="project reveal">
+          <div class="project-thumb t2">🤖</div>
+          <h3>项目二</h3>
+          <p>这是一个关于项目二的简短描述，介绍它的功能、特点和亮点。</p>
+          <div class="tags">
+            <span class="tag blue">Python</span><span class="tag">AI</span>
+          </div>
+        </div>
+        <div class="project reveal">
+          <div class="project-thumb t3">🚀</div>
+          <h3>项目三</h3>
+          <p>这是一个关于项目三的简短描述，介绍它的功能、特点和亮点。</p>
+          <div class="tags">
+            <span class="tag blue">Node.js</span><span class="tag">API</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="platforms" class="section--alt">
+    <div class="container">
+      <p class="section-kicker reveal">Platforms</p>
+      <h2 class="section-title reveal">我的平台</h2>
+      <div class="platforms" id="platformList"></div>
+    </div>
+  </section>
+
+  <section id="contact" class="contact-wrap">
+    <div class="contact__blob" aria-hidden="true"></div>
+    <div class="container contact">
+      <p class="section-kicker reveal">Contact</p>
+      <h2 class="section-title reveal">联系我</h2>
+      <p class="reveal">如果你想和我交流或合作，欢迎通过以下方式联系我：</p>
+      <a class="email-btn reveal" href="mailto:your-email@example.com">your-email@example.com</a>
+    </div>
   </section>
 
   <footer>
-    <div class="container copyright">
-      © 2025 WYL394 的个人主页<span class="sep">·</span>用 ❤ 与 SF Pro 制作
+    <div class="container">
+      <div class="copyright">
+        © <span data-year>2025</span> WYL394 的个人主页<span class="sep">·</span>用 ❤ 与 SF Pro 制作
+      </div>
+      <div class="footer-socials" id="footerSocials"></div>
     </div>
   </footer>
 
@@ -943,6 +1315,12 @@
           <div id="projectList"></div>
           <button class="mini" id="addProject">＋ 添加项目</button>
         </div>
+        <div class="block">
+          <h4>平台（公众号 / 人人都是产品经理）</h4>
+          <div id="platformList"></div>
+          <p class="hint">公众号：上传二维码图片（自动保存到浏览器）；人人都是产品经理：填主页链接即可。</p>
+          <button class="mini" id="addPlatform">＋ 添加平台</button>
+        </div>
       </div>
       <div class="editor-foot">
         <button id="resetBtn" class="danger" title="恢复为最初的内容">恢复</button>
@@ -951,6 +1329,7 @@
         <button id="saveBtn" class="primary">保存</button>
       </div>
       <input type="file" id="importFile" accept=".json,application/json" hidden>
+      <input type="file" id="qrFile" accept="image/*" hidden>
     </aside>
   </div>
 
@@ -983,6 +1362,10 @@
           { icon: '🖥️', title: '项目一', desc: '这是一个关于项目一的简短描述，介绍它的功能、特点和亮点。', tags: ['HTML', 'CSS', 'JS'] },
           { icon: '🤖', title: '项目二', desc: '这是一个关于项目二的简短描述，介绍它的功能、特点和亮点。', tags: ['Python', 'AI'] },
           { icon: '🚀', title: '项目三', desc: '这是一个关于项目三的简短描述，介绍它的功能、特点和亮点。', tags: ['Node.js', 'API'] }
+        ],
+        platforms: [
+          { name: '微信公众号', desc: '我的 AI 产品观察与思考，扫码关注，一起交流。', url: '', qr: '' },
+          { name: '人人都是产品经理', desc: '我的个人主页与产品文章，产品观点都在这里。', url: '', qr: '' }
         ]
       };
 
@@ -1028,6 +1411,20 @@
       var TILES = ['tile-1', 'tile-2', 'tile-3', 'tile-4'];
       var GRADS = ['t1', 't2', 't3'];
 
+      /* ================= 平台图标（内联 SVG） ================= */
+      var ICONS = {
+        wechat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8c-1.3 0-2.5-.3-3.5-.8L4.5 21l1.6-4.3A8 8 0 1 1 21 12Z"/><circle cx="8.8" cy="12" r="0.9" fill="currentColor" stroke="none"/><circle cx="13" cy="12" r="0.9" fill="currentColor" stroke="none"/><circle cx="17.2" cy="12" r="0.9" fill="currentColor" stroke="none"/></svg>',
+        article: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+        link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>'
+      };
+
+      function platformIcon(name, url) {
+        var s = name + ' ' + (url || '');
+        if (/人人|woshipm/i.test(s)) return ICONS.article;
+        if (/微信|公众号|wechat/i.test(s)) return ICONS.wechat;
+        return ICONS.link;
+      }
+
       /* ================= 渲染 ================= */
       function render(animate) {
         qs('.logo').textContent = siteData.name;
@@ -1039,8 +1436,8 @@
         qs('.hero .bio').textContent = siteData.bio;
 
         var aboutEl = qs('.about-card');
-        aboutEl.innerHTML = (siteData.about || []).map(function (t) {
-          return '<p>' + esc(t) + '</p>';
+        aboutEl.innerHTML = (siteData.about || []).map(function (t, i) {
+          return '<p' + (i === 0 ? ' class="lead"' : '') + '>' + esc(t) + '</p>';
         }).join('');
 
         var skillsEl = qs('.skills');
@@ -1067,14 +1464,59 @@
         mailBtn.textContent = siteData.email;
         mailBtn.href = 'mailto:' + siteData.email;
 
-        qs('.copyright').innerHTML = '© 2025 ' + esc(siteData.name) +
-          ' 的个人主页<span class="sep">·</span>用 ❤ 与 SF Pro 制作';
+        qs('[data-year]').textContent = new Date().getFullYear();
+        qs('.copyright').innerHTML = '© <span data-year>' + new Date().getFullYear() + '</span> ' +
+          esc(siteData.name) + ' 的个人主页<span class="sep">·</span>用 ❤ 与 SF Pro 制作';
+
+        renderPlatforms();
+        renderFooterSocials();
 
         if (animate) {
           observeReveals();
         } else {
           qsa('.reveal').forEach(function (el) { el.classList.add('visible'); });
         }
+      }
+
+      /* ---------- 平台渲染 ---------- */
+      function renderPlatforms() {
+        var wrap = qs('#platformList');
+        if (!wrap) return;
+        wrap.innerHTML = (siteData.platforms || []).map(function (p) {
+          var action = '';
+          if (p.qr) {
+            action = '<img class="platform__qr" src="' + esc(p.qr) + '" alt="' + esc(p.name) + ' 二维码" />';
+          } else if (p.url) {
+            action = '<a class="btn btn-primary platform__btn" href="' + esc(p.url) +
+              '" target="_blank" rel="noopener noreferrer">去看看 <span class="arrow">→</span></a>';
+          } else {
+            action = '<div class="platform__qr--empty" role="button" title="点击去填写">' +
+              '<span style="font-size:26px">📷</span>放你的二维码 / 链接<br>点这里去填写</div>';
+          }
+          return '<div class="platform reveal">' +
+            '<div class="platform__top">' +
+            '<span class="platform__icon">' + platformIcon(p.name, p.url) + '</span>' +
+            '<span class="platform__name">' + esc(p.name) + '</span>' +
+            '</div>' +
+            '<p class="platform__desc">' + esc(p.desc) + '</p>' +
+            action +
+            '</div>';
+        }).join('');
+      }
+
+      /* ---------- 页脚社交链接 ---------- */
+      function renderFooterSocials() {
+        var wrap = qs('#footerSocials');
+        if (!wrap) return;
+        var links = ['<a href="mailto:' + esc(siteData.email) + '">邮箱</a>'];
+        (siteData.platforms || []).forEach(function (p) {
+          if (p.url) {
+            links.push('<a href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">' + esc(p.name) + '</a>');
+          } else if (p.qr) {
+            links.push('<span>' + esc(p.name) + '</span>');
+          }
+        });
+        wrap.innerHTML = links.join('');
       }
 
       /* ================= 滚动显现动画 ================= */
@@ -1092,14 +1534,37 @@
               io.unobserve(entry.target);
             }
           });
-        }, { threshold: 0.12 });
+        }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
         items.forEach(function (el) { io.observe(el); });
+      }
+
+      /* ================= 顶部滚动进度条 ================= */
+      function initScrollProgress() {
+        var bar = qs('#scrollProgress');
+        var update = function () {
+          var h = document.documentElement;
+          var max = h.scrollHeight - h.clientHeight;
+          bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+        };
+        update();
+        window.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+      }
+
+      /* ================= 导航滚动状态 ================= */
+      function initNav() {
+        var nav = qs('#nav');
+        var onScroll = function () {
+          nav.classList.toggle('is-scrolled', window.scrollY > 16);
+        };
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
       }
 
       /* ================= 导航高亮 ================= */
       (function initNavHighlight() {
         var sections = qsa('section[id]');
-        var links = qsa('nav a');
+        var links = qsa('nav ul a');
         var map = {};
         links.forEach(function (a) {
           map[a.getAttribute('href').slice(1)] = a;
@@ -1173,6 +1638,39 @@
         return div;
       }
 
+      function platformRow(p) {
+        var div = document.createElement('div');
+        div.className = 'field-row';
+        div.innerHTML =
+          '<div class="row1">' +
+          '<input class="f-name" placeholder="名称（如：微信公众号）" value="' + esc(p.name) + '">' +
+          '<button class="del" title="删除">×</button>' +
+          '</div>' +
+          '<textarea class="f-desc" placeholder="一句话描述">' + esc(p.desc) + '</textarea>' +
+          '<input class="f-url" placeholder="链接（如 woshipm 主页，可留空）" value="' + esc(p.url) + '">' +
+          '<div class="qr-row">' +
+          '<img class="qr-preview"' + (p.qr ? ' src="' + esc(p.qr) + '"' : ' style="display:none"') + ' alt="二维码预览">' +
+          '<button class="mini qr-upload" type="button">📷 上传二维码</button>' +
+          '<button class="mini qr-clear" type="button"' + (p.qr ? '' : ' style="display:none"') + '>移除</button>' +
+          '</div>';
+        var img = qs('.qr-preview', div);
+        var clearBtn = qs('.qr-clear', div);
+        if (p.qr) div._qr = p.qr;
+
+        qs('.del', div).addEventListener('click', function () { div.remove(); });
+        qs('.qr-upload', div).addEventListener('click', function () {
+          qrTargetRow = div;
+          qs('#qrFile').click();
+        });
+        clearBtn.addEventListener('click', function () {
+          div._qr = '';
+          img.style.display = 'none';
+          img.removeAttribute('src');
+          clearBtn.style.display = 'none';
+        });
+        return div;
+      }
+
       function fillForm() {
         qs('#f-name').value = siteData.name;
         qs('#f-subtitle').value = siteData.subtitle;
@@ -1188,6 +1686,10 @@
         var pl = qs('#projectList');
         pl.innerHTML = '';
         (siteData.projects || []).forEach(function (p) { pl.appendChild(projectRow(p)); });
+
+        var pfl = qs('#platformList');
+        pfl.innerHTML = '';
+        (siteData.platforms || []).forEach(function (p) { pfl.appendChild(platformRow(p)); });
       }
 
       function collectForm() {
@@ -1199,7 +1701,8 @@
           badge: trim(qs('#f-badge').value) || '欢迎来到我的主页',
           about: qs('#f-about').value.split('\n').map(trim).filter(Boolean),
           skills: [],
-          projects: []
+          projects: [],
+          platforms: []
         };
         qsa('#skillList .field-row').forEach(function (row) {
           d.skills.push({
@@ -1216,8 +1719,46 @@
             tags: qs('.f-tags', row).value.split(/[,，]/).map(trim).filter(Boolean)
           });
         });
+        qsa('#platformList .field-row').forEach(function (row) {
+          d.platforms.push({
+            name: trim(qs('.f-name', row).value) || '未命名平台',
+            desc: trim(qs('.f-desc', row).value),
+            url: trim(qs('.f-url', row).value),
+            qr: row._qr || ''
+          });
+        });
         return d;
       }
+
+      /* ----- 二维码上传 ----- */
+      var qrTargetRow = null;
+      qs('#qrFile').addEventListener('change', function (e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        if (!/^image\//.test(file.type)) {
+          toast('请选择图片文件');
+          e.target.value = '';
+          return;
+        }
+        if (file.size > 500 * 1024) {
+          toast('图片太大（超过 500KB），请压缩后再试');
+          e.target.value = '';
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function () {
+          if (qrTargetRow) {
+            var img = qs('.qr-preview', qrTargetRow);
+            img.src = reader.result;
+            img.style.display = 'block';
+            qrTargetRow._qr = reader.result;
+            qs('.qr-clear', qrTargetRow).style.display = '';
+            toast('二维码已添加，记得点保存');
+          }
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+      });
 
       /* ----- 事件绑定 ----- */
       qs('#editBtn').addEventListener('click', openEditor);
@@ -1234,6 +1775,16 @@
       });
       qs('#addProject').addEventListener('click', function () {
         qs('#projectList').appendChild(projectRow({ icon: '📦', title: '新项目', desc: '', tags: [] }));
+      });
+      qs('#addPlatform').addEventListener('click', function () {
+        qs('#platformList').appendChild(platformRow({ name: '新平台', desc: '', url: '', qr: '' }));
+      });
+
+      // 页面上的「去填写」占位 → 打开编辑面板
+      document.addEventListener('click', function (e) {
+        if (e.target.closest('.platform__qr--empty')) {
+          openEditor();
+        }
       });
 
       qs('#saveBtn').addEventListener('click', function () {
@@ -1294,9 +1845,9 @@
       });
 
       /* ================= 初始化 ================= */
-      var hasSaved = false;
-      try { hasSaved = !!localStorage.getItem(STORAGE_KEY); } catch (e) {}
-      render(hasSaved); // 有保存过的数据就渲染（带动画）；无则用静态 HTML
+      initScrollProgress();
+      initNav();
+      render(true);
     })();
   </script>
 </body>
